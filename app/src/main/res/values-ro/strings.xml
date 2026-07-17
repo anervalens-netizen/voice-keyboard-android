@@ -428,4 +428,26 @@
     <string name="about_wiki_link_description">Wiki-ul poate fi îmbunătățit de orice utilizator GitHub!</string>
     <string name="landscape">Peisaj</string>
     <string name="label_zwnj_key" tools:keep="@string/label_zwnj_key">Separare fără spațiu</string>
+    <string name="voice_setup_title">Dictare vocală OpenAI</string>
+    <string name="voice_setup_summary">Împerechează telefonul și acordă accesul la microfon</string>
+    <string name="voice_pairing_code">Cod de împerechere de unică folosință</string>
+    <string name="voice_pair_button">Împerechează telefonul</string>
+    <string name="voice_pairing_ready">Telefon împerecheat. Dictarea este pregătită.</string>
+    <string name="voice_pairing_needed">Introdu un cod nou generat pe serverul privat.</string>
+    <string name="voice_pairing_working">Se împerechează…</string>
+    <string name="voice_pairing_failed">Împerecherea a eșuat. Verifică codul și conexiunea.</string>
+    <string name="voice_microphone_grant">Acordă accesul la microfon</string>
+    <string name="voice_microphone_granted">Acces la microfon acordat</string>
+    <string name="voice_open_keyboard_settings">Activează tastatura în Android</string>
+    <string name="voice_choose_keyboard">Alege tastatura activă</string>
+    <string name="voice_privacy_note">Audio este trimis numai după ce apeși stop. Cheia OpenAI rămâne pe serverul tău.</string>
+    <string name="voice_recording">Ascult… Apasă din nou microfonul pentru trimitere.</string>
+    <string name="voice_uploading">Transcriu cu OpenAI…</string>
+    <string name="voice_recording_status">● Înregistrare — apasă din nou pentru Stop</string>
+    <string name="voice_uploading_status">Se transcrie…</string>
+    <string name="voice_not_paired">Împerechează telefonul înainte de a folosi dictarea.</string>
+    <string name="voice_permission_needed">Este necesar accesul la microfon.</string>
+    <string name="voice_recording_failed">Nu am putut porni sau salva înregistrarea.</string>
+    <string name="voice_transcription_failed">Transcrierea a eșuat. Textul nu a fost modificat.</string>
+    <string name="voice_empty_transcription">Nu am detectat vorbire.</string>
 </resources>

@@ -42,12 +42,15 @@ object Defaults {
         LayoutType.CLIPBOARD_BOTTOM -> "clip_bottom_row"
     }
 
-    private const val DEFAULT_SIZE_SCALE = 1.0f // 100%
+    private const val DEFAULT_SIZE_SCALE = 1.12f // larger phone-first keys and labels
+    private const val COMPACT_PORTRAIT_HEIGHT_SCALE = 0.92f
+    private const val COMPACT_KEY_GAP_SCALE = 0.70f
+    private const val COMPACT_BOTTOM_PADDING_SCALE = 0.25f
     const val PREF_THEME_STYLE = KeyboardTheme.STYLE_MATERIAL
     fun PREF_ICON_STYLE(prefs: SharedPreferences) = prefs.getString(Settings.PREF_THEME_STYLE, PREF_THEME_STYLE)!!
     const val PREF_THEME_COLORS = KeyboardTheme.THEME_LIGHT
     const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_DARK
-    const val PREF_THEME_KEY_BORDERS = false
+    const val PREF_THEME_KEY_BORDERS = true
     @JvmField
     val PREF_THEME_DAY_NIGHT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     const val PREF_CUSTOM_ICON_NAMES = ""
@@ -83,28 +86,43 @@ object Defaults {
             "hu${Separators.SET}${ExtraValue.KEYBOARD_LAYOUT_SET}=MAIN:qwerty"
     const val PREF_ENABLE_SPLIT_KEYBOARD = false
     @JvmField
-    val PREF_SPLIT_SPACER_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    val PREF_SPLIT_SPACER_SCALE = arrayOf(
+        DEFAULT_SIZE_SCALE, DEFAULT_SIZE_SCALE,
+        DEFAULT_SIZE_SCALE, DEFAULT_SIZE_SCALE,
+    )
     @JvmField
-    val PREF_KEYBOARD_HEIGHT_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(
+        COMPACT_PORTRAIT_HEIGHT_SCALE, 1f,
+        COMPACT_PORTRAIT_HEIGHT_SCALE, 1f,
+    )
     @JvmField
-    val PREF_BOTTOM_ROW_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    val PREF_BOTTOM_ROW_SCALE = arrayOf(
+        DEFAULT_SIZE_SCALE, DEFAULT_SIZE_SCALE,
+        DEFAULT_SIZE_SCALE, DEFAULT_SIZE_SCALE,
+    )
     @JvmField
-    // DEFAULT_SIZE_SCALE for portrait, 0 for landscape (normal and folded)
-    val PREF_BOTTOM_PADDING_SCALE = arrayOf(DEFAULT_SIZE_SCALE, 0f, DEFAULT_SIZE_SCALE, 0f)
+    // Compact padding for portrait, 0 for landscape (normal and folded).
+    val PREF_BOTTOM_PADDING_SCALE = arrayOf(
+        COMPACT_BOTTOM_PADDING_SCALE, 0f,
+        COMPACT_BOTTOM_PADDING_SCALE, 0f,
+    )
     @JvmField
-    val PREF_SIDE_PADDING_SCALE = Array(8) { 0f }
+    val PREF_SIDE_PADDING_SCALE = arrayOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)
     @JvmField
-    val PREF_KEY_GAP_SCALE = Array(4) { DEFAULT_SIZE_SCALE }
+    val PREF_KEY_GAP_SCALE = arrayOf(
+        COMPACT_KEY_GAP_SCALE, COMPACT_KEY_GAP_SCALE,
+        COMPACT_KEY_GAP_SCALE, COMPACT_KEY_GAP_SCALE,
+    )
     const val PREF_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_HINT_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_FONT_SCALE = DEFAULT_SIZE_SCALE
     const val PREF_EMOJI_KEY_FIT = true
     const val PREF_EMOJI_SKIN_TONE = ""
     @JvmField
-    val PREF_SPACE_HORIZONTAL_SWIPE = KeyboardActionListener.SwipeAction.MOVE_CURSOR.name
+    val PREF_SPACE_HORIZONTAL_SWIPE = KeyboardActionListener.SwipeAction.NONE.name
     @JvmField
     val PREF_SPACE_VERTICAL_SWIPE = KeyboardActionListener.SwipeAction.NONE.name
-    const val PREF_DELETE_SWIPE = true
+    const val PREF_DELETE_SWIPE = false
     const val PREF_AUTOSPACE_AFTER_PUNCTUATION = false
     const val PREF_AUTOSPACE_AFTER_SUGGESTION = true
     const val PREF_AUTOSPACE_AFTER_GESTURE_TYPING = true
@@ -114,7 +132,7 @@ object Defaults {
     const val PREF_BIGRAM_PREDICTIONS = true
     const val PREF_SUGGEST_PUNCTUATION = false
     const val PREF_SUGGEST_CLIPBOARD_CONTENT = true
-    const val PREF_GESTURE_INPUT = true
+    const val PREF_GESTURE_INPUT = false
     const val PREF_VIBRATION_DURATION_SETTINGS = -1
     const val PREF_KEYPRESS_SOUND_VOLUME = -0.01f
     const val PREF_KEY_LONGPRESS_TIMEOUT = 300
@@ -146,7 +164,7 @@ object Defaults {
     const val PREF_SHOW_POPUP_HINTS = false
     const val PREF_SHOW_TLD_POPUP_KEYS = true
     const val PREF_MORE_POPUP_KEYS = "main"
-    const val PREF_SPACE_TO_CHANGE_LANG = true
+    const val PREF_SPACE_TO_CHANGE_LANG = false
     const val PREF_LANGUAGE_SWIPE_DISTANCE = 5
     const val PREF_TOUCHPAD_SENSITIVITY = 50
     const val PREF_TOUCHPAD_EDGE_SCROLL = true
@@ -162,7 +180,7 @@ object Defaults {
     const val PREF_SELECTED_SUBTYPE = ""
     const val PREF_URL_DETECTION = false
     const val PREF_DONT_SHOW_MISSING_DICTIONARY_DIALOG = false
-    const val PREF_TOOLBAR_MODE = "EXPANDABLE"
+    const val PREF_TOOLBAR_MODE = "SUGGESTION_STRIP"
     const val PREF_TOOLBAR_HIDING_GLOBAL = true
     const val PREF_TOOLBAR_SWIPE_DOWN_TO_HIDE = false
     const val PREF_QUICK_PIN_TOOLBAR_KEYS = false

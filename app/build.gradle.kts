@@ -12,14 +12,17 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "helium314.keyboard"
+        applicationId = "eu.astancu.voicekeyboard"
         minSdk = 21
         targetSdk = 36
-        versionCode = 4005
-        versionName = "4.0"
+        // Keep the upstream HeliBoard version-code range so its historical
+        // preference migrations are not replayed on every private release.
+        versionCode = 4002
+        versionName = "0.1.2"
         ndk {
             abiFilters.clear()
-            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+            // This private build targets the physical OnePlus Nord 4.
+            abiFilters.add("arm64-v8a")
         }
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }

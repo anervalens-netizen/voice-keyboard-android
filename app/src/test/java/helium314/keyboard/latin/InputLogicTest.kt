@@ -12,6 +12,7 @@ import androidx.core.content.edit
 import helium314.keyboard.ShadowInputMethodManager2
 import helium314.keyboard.ShadowLocaleManagerCompat
 import helium314.keyboard.event.Event
+import helium314.keyboard.keyboard.KeyboardActionListener
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.keyboard.MainKeyboardView
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
@@ -692,6 +693,12 @@ class InputLogicTest {
     }
 
     @Test fun moveCursorHorizontally() {
+        latinIME.prefs().edit(commit = true) {
+            putString(
+                Settings.PREF_SPACE_HORIZONTAL_SWIPE,
+                KeyboardActionListener.SwipeAction.MOVE_CURSOR.name,
+            )
+        }
         chainInput("hello")
         assertEquals(5, cursor)
         latinIME.mKeyboardActionListener.onHorizontalSpaceSwipe(-2)
@@ -705,6 +712,12 @@ class InputLogicTest {
         latinIME.mKeyboardActionListener.onHorizontalSpaceSwipe(3)
         assertEquals(5, cursor)
         latinIME.mKeyboardActionListener.onHorizontalSpaceSwipe(1)
+        assertEquals(5, cursor)
+    }
+
+    @Test fun horizontalSpaceSwipeIsDisabledByDefault() {
+        chainInput("hello")
+        latinIME.mKeyboardActionListener.onHorizontalSpaceSwipe(-2)
         assertEquals(5, cursor)
     }
 

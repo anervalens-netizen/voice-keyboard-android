@@ -10,6 +10,7 @@ app/build
 app/release
 app/.cxx
 app/.attach_*
+dist/
 fastlane/Appfile
 tools/*.txt
 *.patch

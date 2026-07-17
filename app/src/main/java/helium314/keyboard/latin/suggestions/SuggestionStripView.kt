@@ -12,9 +12,11 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.LayoutInflater
@@ -24,6 +26,7 @@ import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
@@ -131,6 +134,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         LinearLayout.LayoutParams.MATCH_PARENT
     )
 
+    private val voiceToolbarKeyLayoutParams
+        get() = LinearLayout.LayoutParams(52.dpToPx(resources), LinearLayout.LayoutParams.MATCH_PARENT).apply {
+            marginEnd = 2.dpToPx(resources)
+        }
+
     init {
         val colors = Settings.getValues().mColors
 
@@ -158,13 +166,13 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         // toolbar keys setup (no need to hide them any more when locked, because then suggestion strip is gone anyway
         for (key in getEnabledToolbarKeys(context.prefs())) {
             val button = createToolbarKey(context, key)
-            button.layoutParams = toolbarKeyLayoutParams
+            button.layoutParams = if (key == ToolbarKey.VOICE) voiceToolbarKeyLayoutParams else toolbarKeyLayoutParams
             setupKey(button, colors)
             toolbar.addView(button)
         }
         for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
             val button = createToolbarKey(context, pinnedKey)
-            button.layoutParams = toolbarKeyLayoutParams
+            button.layoutParams = if (pinnedKey == ToolbarKey.VOICE) voiceToolbarKeyLayoutParams else toolbarKeyLayoutParams
             setupKey(button, colors)
             pinnedKeys.addView(button)
             val pinnedKeyInToolbar = toolbar.findViewWithTag<View>(pinnedKey)
@@ -182,6 +190,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     private lateinit var listener: Listener
     private var suggestedWords = SuggestedWords.getEmptyInstance()
+    private var voiceDictationState = 0
+    private var lastSuggestionsRtl = false
     private var startIndexOfMoreSuggestions = 0
     private var isExternalSuggestionVisible = false // Required to disable the more suggestions if other suggestions are visible
     private val layoutHelper = SuggestionStripLayoutHelper(context, attrs, defStyle, wordViews, dividerViews, debugInfoViews)
@@ -246,6 +256,12 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         clear()
         setRtl(isRtlLanguage)
         suggestedWords = suggestions
+        lastSuggestionsRtl = isRtlLanguage
+        if (voiceDictationState != 0) {
+            showVoiceStatus()
+            updateKeys()
+            return
+        }
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
@@ -513,6 +529,60 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         pinnedKeys.findViewWithTag<View>(ToolbarKey.VOICE)?.isVisible = show
     }
 
+    fun setVoiceDictationState(state: Int) {
+        val recording = state == 1
+        val busy = state == 2
+        voiceDictationState = state
+        listOf(toolbar, pinnedKeys).forEach { group ->
+            group.findViewWithTag<ImageButton>(ToolbarKey.VOICE)?.apply {
+                isSelected = recording
+                styleVoiceButton(this, recording, busy)
+                contentDescription = context.getString(
+                    when {
+                        recording -> R.string.voice_recording
+                        busy -> R.string.voice_uploading
+                        else -> R.string.spoken_description_mic
+                    }
+                )
+            }
+        }
+        if (state == 0) setSuggestions(suggestedWords, lastSuggestionsRtl)
+        else showVoiceStatus()
+    }
+
+    private fun showVoiceStatus() {
+        clear()
+        val recording = voiceDictationState == 1
+        val colors = Settings.getValues().mColors
+        val status = TextView(context).apply {
+            text = context.getString(
+                if (recording) R.string.voice_recording_status else R.string.voice_uploading_status,
+            )
+            contentDescription = text
+            gravity = Gravity.CENTER
+            isSingleLine = true
+            ellipsize = TextUtils.TruncateAt.END
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(if (recording) Color.WHITE else colors.get(ColorType.KEY_TEXT))
+            setPadding(10.dpToPx(resources), 0, 10.dpToPx(resources), 0)
+            background = GradientDrawable().apply {
+                cornerRadius = 12.dpToPx(resources).toFloat()
+                setColor(
+                    if (recording) VOICE_RECORDING_COLOR
+                    else colors.get(ColorType.TOOL_BAR_KEY_ENABLED_BACKGROUND) or -0x1000000,
+                )
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+            ).apply {
+                setMargins(4.dpToPx(resources), 4.dpToPx(resources), 4.dpToPx(resources), 4.dpToPx(resources))
+            }
+        }
+        suggestionsStrip.addView(status)
+        suggestionsStrip.isVisible = true
+    }
+
     private fun updateKeys() {
         updateVoiceKey()
         val settingsValues = Settings.getValues()
@@ -551,14 +621,39 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         view.setOnClickListener(this)
         view.setOnLongClickListener(this)
         (view.layoutParams as LinearLayout.LayoutParams).weight = 1f
-        colors.setColor(view, ColorType.TOOL_BAR_KEY)
-        colors.setBackground(view, ColorType.STRIP_BACKGROUND)
+        if (view.tag == ToolbarKey.VOICE) {
+            styleVoiceButton(view, recording = false, busy = false)
+        } else {
+            colors.setColor(view, ColorType.TOOL_BAR_KEY)
+            colors.setBackground(view, ColorType.STRIP_BACKGROUND)
+        }
+    }
+
+    private fun styleVoiceButton(button: ImageButton, recording: Boolean, busy: Boolean) {
+        val horizontalInset = 8.dpToPx(resources)
+        val verticalInset = 2.dpToPx(resources)
+        val circle = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(if (recording) VOICE_RECORDING_COLOR else VOICE_IDLE_COLOR)
+        }
+        button.apply {
+            alpha = if (busy) 0.62f else 1f
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setPadding(
+                10.dpToPx(resources), 6.dpToPx(resources),
+                10.dpToPx(resources), 6.dpToPx(resources),
+            )
+            background = InsetDrawable(circle, horizontalInset, verticalInset, horizontalInset, verticalInset)
+            setColorFilter(Color.WHITE)
+        }
     }
 
     companion object {
         @JvmField
         var DEBUG_SUGGESTIONS = false
         private const val DEBUG_INFO_TEXT_SIZE_IN_DIP = 6.5f
+        private val VOICE_IDLE_COLOR = Color.rgb(25, 118, 210)
+        private val VOICE_RECORDING_COLOR = Color.rgb(211, 47, 47)
         private val TAG = SuggestionStripView::class.java.simpleName
     }
 }

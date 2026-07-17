@@ -1,3 +1,28 @@
+# Tastatura Vocală
+
+Private-first Android keyboard derived from HeliBoard, with explicit batch Romanian voice dictation.
+The microphone records only between two user taps, sends the completed audio to the paired STT
+gateway, and inserts only the final transcription. The OpenAI credential remains on the server.
+
+## Install and pair
+
+1. Install the APK from the matching GitHub release, enable **Tastatura Vocală** in Android input
+   settings, select it, and grant microphone access.
+2. Ask the server owner for a fresh one-time pairing code. Each code expires after ten minutes and
+   enrolls one device identity backed by Android Keystore.
+3. Open the keyboard setup screen and enter the code. Public HTTPS is the primary STT path;
+   Tailscale is only a fallback.
+
+Normal typing works without pairing. Voice dictation consumes the server owner's OpenAI quota and
+is subject to the server's per-device hourly and daily limits.
+
+## Source and license
+
+This repository is the complete corresponding source for the APKs published in its GitHub releases.
+It preserves HeliBoard's GPLv3 license, notices, and history. Build and device procedures are in
+[RUNBOOK.md](RUNBOOK.md), while the custom voice boundary is documented in
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 # HeliBoard
 HeliBoard is a privacy-conscious and customizable open-source keyboard, based on AOSP / OpenBoard.
 Does not use internet permission, and thus is 100% offline.

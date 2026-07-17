@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <!-- The primary endpoint is HTTPS. This exception is an encrypted
+         Tailscale-only fallback on the user's private server. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">100.86.113.108</domain>
+    </domain-config>
+</network-security-config>

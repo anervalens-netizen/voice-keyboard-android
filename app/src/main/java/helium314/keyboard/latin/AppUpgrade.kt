@@ -696,6 +696,27 @@ private object AppUpgrade {
                 remove("narrow_key_gaps")
             }
         }
+        if (oldVersion < 4002) {
+            // Voice Keyboard 0.1.1 used a low custom version code, which caused
+            // HeliBoard's historical migration to restore very large key gaps.
+            // Apply the compact product geometry to existing installations.
+            prefs.edit {
+                for (i in 0..3) {
+                    putFloat(
+                        createPrefKeyForBooleanSettings(Settings.PREF_KEYBOARD_HEIGHT_SCALE_PREFIX, i, 2),
+                        Defaults.PREF_KEYBOARD_HEIGHT_SCALE[i],
+                    )
+                    putFloat(
+                        createPrefKeyForBooleanSettings(Settings.PREF_KEY_GAP_SCALE_PREFIX, i, 2),
+                        Defaults.PREF_KEY_GAP_SCALE[i],
+                    )
+                    putFloat(
+                        createPrefKeyForBooleanSettings(Settings.PREF_BOTTOM_PADDING_SCALE_PREFIX, i, 2),
+                        Defaults.PREF_BOTTOM_PADDING_SCALE[i],
+                    )
+                }
+            }
+        }
         upgradeToolbarPrefs(prefs)
         LayoutUtilsCustom.onLayoutFileChanged() // just to be sure
         prefs.edit { putInt(Settings.PREF_VERSION_CODE, BuildConfig.VERSION_CODE) }

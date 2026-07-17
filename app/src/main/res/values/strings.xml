@@ -1301,5 +1301,28 @@ New dictionary:
      string will probably be removed once data gathering is finished (end of 2026 latest) -->
     <string name="gesture_data_swipe_o_scope">Tool for visualizing gesture data: &lt;a href=%s&gt;Swipe-O-Scope&lt;/a&gt;</string>
 
+    <string name="voice_setup_title">OpenAI voice dictation</string>
+    <string name="voice_setup_summary">Pair this phone and grant microphone access</string>
+    <string name="voice_pairing_code">One-time pairing code</string>
+    <string name="voice_pair_button">Pair phone</string>
+    <string name="voice_pairing_ready">Phone paired. Dictation is ready.</string>
+    <string name="voice_pairing_needed">Enter a fresh code generated on the private server.</string>
+    <string name="voice_pairing_working">Pairing…</string>
+    <string name="voice_pairing_failed">Pairing failed. Check the code and connection.</string>
+    <string name="voice_microphone_grant">Grant microphone access</string>
+    <string name="voice_microphone_granted">Microphone access granted</string>
+    <string name="voice_open_keyboard_settings">Enable keyboard in Android</string>
+    <string name="voice_choose_keyboard">Choose active keyboard</string>
+    <string name="voice_privacy_note">Audio is sent only after you tap stop. The OpenAI key stays on your server.</string>
+    <string name="voice_recording">Listening… Tap the microphone again to send.</string>
+    <string name="voice_uploading">Transcribing with OpenAI…</string>
+    <string name="voice_recording_status">● Recording — tap again to Stop</string>
+    <string name="voice_uploading_status">Transcribing…</string>
+    <string name="voice_not_paired">Pair the phone before using dictation.</string>
+    <string name="voice_permission_needed">Microphone permission is required.</string>
+    <string name="voice_recording_failed">Could not start or save the recording.</string>
+    <string name="voice_transcription_failed">Transcription failed. Your text was not changed.</string>
+    <string name="voice_empty_transcription">No speech was detected.</string>
+
     <!-- new strings should go above the section for gesture data gathering -->
 </resources>
