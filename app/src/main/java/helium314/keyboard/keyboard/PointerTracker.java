@@ -45,6 +45,7 @@ import java.util.WeakHashMap;
 
 public final class PointerTracker implements PointerTrackerQueue.Element,
         BatchInputArbiterListener {
+    private static final int VOICE_LONG_PRESS_TIMEOUT_MILLIS = 1_000;
     private static final String TAG = PointerTracker.class.getSimpleName();
     private static final boolean DEBUG_EVENT = false;
     private static final boolean DEBUG_MOVE_EVENT = false;
@@ -1149,7 +1150,17 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         if (key == null) {
             return;
         }
-        sListener.onLongPressKey(key.getCode());
+        final int code = key.getCode();
+        sListener.onLongPressKey(code);
+        if ((code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER)
+                && Settings.getValues().mShowsVoiceInputKey) {
+            cancelKeyTracking();
+            sListener.onPressKey(KeyCode.VOICE_INPUT, 0, true, HapticEvent.NO_HAPTICS);
+            sListener.onCodeInput(KeyCode.VOICE_INPUT, Constants.NOT_A_COORDINATE,
+                    Constants.NOT_A_COORDINATE, false);
+            sListener.onReleaseKey(KeyCode.VOICE_INPUT, false);
+            return;
+        }
         if (key.hasNoPanelAutoPopupKey()) {
             cancelKeyTracking();
             final int popupKeyCode = key.getPopupKeys()[0].mCode;
@@ -1158,7 +1169,6 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             sListener.onReleaseKey(popupKeyCode, false);
             return;
         }
-        final int code = key.getCode();
         if (code == KeyCode.LANGUAGE_SWITCH
                 || (code == Constants.CODE_SPACE && key.getPopupKeys() == null && Settings.getValues().mSpaceForLangChange)
         ) {
@@ -1269,7 +1279,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     private int getLongPressTimeout(final int code) {
         final int longpressTimeout = Settings.getValues().mKeyLongpressTimeout;
-        if (code == KeyCode.SHIFT || code == KeyCode.SYMBOL_ALPHA) {
+        if ((code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER)
+                && Settings.getValues().mShowsVoiceInputKey) {
+            return VOICE_LONG_PRESS_TIMEOUT_MILLIS;
+        } else if (code == KeyCode.SHIFT || code == KeyCode.SYMBOL_ALPHA) {
             // We use slightly longer timeout for shift-lock and the numpad long-press.
             return longpressTimeout * 3 / 2;
         } else if (mIsInSlidingKeyInput) {

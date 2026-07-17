@@ -15,14 +15,14 @@ Gaming exposes its authorized ADB server through Tailscale:
 
 ```bash
 adb -H 100.74.73.114 -P 5037 devices -l
-adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.3-debugNoMinify.apk
+adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.4-debugNoMinify.apk
 ```
 
 After installation, open setup, grant microphone permission, enter a fresh one-time pairing code, enable the IME, and select it. Validate typing and dictation in a normal text field and confirm that voice input is unavailable in password fields.
 
-During dictation, the transparent top plane must keep a floating microphone at the right. The first tap must animate a red status pill toward the left with `● Înregistrare — apasă din nou pentru Stop`. After the second tap, the pill must contract to `Se transcrie…`; it must fully retract after the final text is inserted or dictation is cancelled.
+The suggestion strip must consume no height. A short Enter/action-key press must keep its normal behavior. Holding it for one second must start or stop dictation without inserting Enter; the microphone badge must turn red while recording and slate while transcribing.
 
-In portrait, verify that the row gaps and bottom padding are compact without reducing the key touch surfaces. The top plane must have no solid bar background and must retain its height through every dictation state. The microphone must have a blue circular idle state, a red recording state, remain slightly inward from the right edge, and keep a reliable touch target throughout both animations.
+In portrait, verify that no bar or empty band remains above the keys. The Enter/action key must retain its normal icon with a small microphone badge, and the badge must be absent in password fields.
 
 ## Distribution
 

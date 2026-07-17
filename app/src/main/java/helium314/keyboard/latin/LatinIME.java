@@ -1431,6 +1431,8 @@ public class LatinIME extends InputMethodService implements
 
     public void setVoiceDictationState(final int state) {
         if (mSuggestionStripView != null) mSuggestionStripView.setVoiceDictationState(state);
+        final MainKeyboardView keyboardView = mKeyboardSwitcher.getMainKeyboardView();
+        if (keyboardView != null) keyboardView.setVoiceDictationState(state);
     }
 
     public void onTextInput(@Nullable String rawText) {

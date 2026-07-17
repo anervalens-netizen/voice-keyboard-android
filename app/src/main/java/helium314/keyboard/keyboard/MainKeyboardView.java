@@ -17,7 +17,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
+import android.graphics.PorterDuff;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -58,6 +60,7 @@ import helium314.keyboard.latin.settings.Settings;
 import helium314.keyboard.latin.utils.KtxKt;
 import helium314.keyboard.latin.utils.LanguageOnSpacebarUtils;
 import helium314.keyboard.latin.utils.Log;
+import helium314.keyboard.latin.utils.ToolbarKey;
 import helium314.keyboard.latin.utils.TypefaceUtils;
 
 import java.util.ArrayList;
@@ -72,6 +75,7 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
 
     /** Listener for {@link KeyboardActionListener}. */
     private KeyboardActionListener mKeyboardActionListener;
+    private int mVoiceDictationState;
 
     /* Space key and its icon and background. */
     private Key mSpaceKey;
@@ -709,6 +713,11 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         }
         super.onDrawKeyTopVisuals(key, canvas, paint, params);
         final int code = key.getCode();
+        final Keyboard keyboard = getKeyboard();
+        if ((code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER)
+                && keyboard != null && keyboard.mId.getHasShortcutKey()) {
+            drawVoiceBadge(key, keyboard, canvas, paint);
+        }
         if (code == Constants.CODE_SPACE) {
             // If input language are explicitly selected.
             if (mLanguageOnSpacebarFormatType != LanguageOnSpacebarUtils.FORMAT_TYPE_NONE) {
@@ -721,6 +730,29 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         } else if (code == KeyCode.LANGUAGE_SWITCH) {
             drawKeyPopupHint(key, canvas, paint, params);
         }
+    }
+
+    private void drawVoiceBadge(@NonNull final Key key, @NonNull final Keyboard keyboard,
+            @NonNull final Canvas canvas, @NonNull final Paint paint) {
+        final Drawable source = keyboard.mIconsSet.getIconDrawable(ToolbarKey.VOICE.name());
+        if (source == null || source.getConstantState() == null) return;
+        final int size = Math.max(14, (int) (key.getHeight() * 0.26f));
+        final int padding = Math.max(4, (int) (key.getHeight() * 0.07f));
+        final int x = key.getDrawWidth() - size - padding;
+        final int y = padding;
+        if (mVoiceDictationState != 0) {
+            paint.setColor(mVoiceDictationState == 1 ? Color.rgb(211, 47, 47) : Color.rgb(69, 90, 100));
+            canvas.drawCircle(x + size / 2.0f, y + size / 2.0f, size * 0.72f, paint);
+        }
+        final Drawable icon = source.getConstantState().newDrawable().mutate();
+        icon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+        drawIcon(canvas, icon, x, y, size, size);
+    }
+
+    public void setVoiceDictationState(final int state) {
+        if (mVoiceDictationState == state) return;
+        mVoiceDictationState = state;
+        invalidateAllKeys();
     }
 
     private boolean fitsTextIntoWidth(final int width, final String text, final Paint paint) {

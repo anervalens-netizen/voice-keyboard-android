@@ -14,7 +14,9 @@
 
     <include
         android:id="@+id/strip_container"
-        layout="@layout/strip_container" />
+        layout="@layout/strip_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp" />
 
     <!-- To ensure that key preview popup is correctly placed when the current system locale is
          one of RTL locales, layoutDirection="ltr" is needed in the SDK version 17+. -->

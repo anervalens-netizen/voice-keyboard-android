@@ -1184,6 +1184,9 @@ public class Key implements Comparable<Key> {
                     || (mCode == KeyCode.SYMBOL_ALPHA && !params.mId.getElement().isAlphabet())
             )
                 actionFlags |= ACTION_FLAGS_ENABLE_LONG_PRESS;
+            if ((mCode == Constants.CODE_ENTER || mCode == KeyCode.SHIFT_ENTER)
+                    && params.mId.getHasShortcutKey())
+                actionFlags |= ACTION_FLAGS_ENABLE_LONG_PRESS;
             if (mCode <= Constants.CODE_SPACE && mCode != KeyCode.MULTIPLE_CODE_POINTS && mIconName == null)
                 actionFlags |= ACTION_FLAGS_NO_KEY_PREVIEW;
             switch (mCode) {
