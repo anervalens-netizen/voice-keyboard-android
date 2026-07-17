@@ -13,6 +13,8 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:hapticFeedbackEnabled="false"
         android:soundEffectsEnabled="false">
         <!-- Provide audio and haptic feedback by ourselves based on the keyboard settings.
@@ -55,6 +57,23 @@
             android:gravity="center_horizontal"
             android:hapticFeedbackEnabled="false"
             android:soundEffectsEnabled="false" />
+        <TextView
+            android:id="@+id/voice_dictation_status"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="-10dp"
+            android:layout_marginBottom="4dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:importantForAccessibility="yes"
+            android:maxLines="1"
+            android:paddingStart="14dp"
+            android:paddingEnd="22dp"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:visibility="gone" />
         <LinearLayout
             android:id="@+id/pinned_keys"
             android:orientation="horizontal"

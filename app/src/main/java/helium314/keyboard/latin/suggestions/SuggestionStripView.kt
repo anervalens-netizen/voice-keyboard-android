@@ -5,6 +5,9 @@
  */
 package helium314.keyboard.latin.suggestions
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
@@ -16,7 +19,6 @@ import android.graphics.drawable.InsetDrawable
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.Gravity
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.LayoutInflater
@@ -25,6 +27,7 @@ import android.view.View
 import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -71,6 +74,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.ceil
 
 @SuppressLint("InflateParams")
 class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int) :
@@ -98,7 +102,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         moreSuggestionsContainer = inflater.inflate(R.layout.more_suggestions, null)
 
         val colors = Settings.getValues().mColors
-        colors.setBackground(this, ColorType.STRIP_BACKGROUND)
+        setBackgroundColor(Color.TRANSPARENT)
         repeat(SuggestedWords.MAX_SUGGESTIONS) {
             val word = TextView(context, null, R.attr.suggestionWordStyle)
             word.contentDescription = resources.getString(R.string.spoken_empty_suggestion)
@@ -122,6 +126,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val toolbarContainer: View = findViewById(R.id.toolbar_container)
     private val pinnedKeys: ViewGroup = findViewById(R.id.pinned_keys)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
+    private val voiceStatus: TextView = findViewById(R.id.voice_dictation_status)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
@@ -192,6 +197,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var suggestedWords = SuggestedWords.getEmptyInstance()
     private var voiceDictationState = 0
     private var lastSuggestionsRtl = false
+    private var voiceStatusAnimator: ValueAnimator? = null
     private var startIndexOfMoreSuggestions = 0
     private var isExternalSuggestionVisible = false // Required to disable the more suggestions if other suggestions are visible
     private val layoutHelper = SuggestionStripLayoutHelper(context, attrs, defStyle, wordViews, dividerViews, debugInfoViews)
@@ -253,15 +259,21 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     fun setSuggestions(suggestions: SuggestedWords, isRtlLanguage: Boolean) {
-        clear()
         setRtl(isRtlLanguage)
         suggestedWords = suggestions
         lastSuggestionsRtl = isRtlLanguage
         if (voiceDictationState != 0) {
+            clear()
             showVoiceStatus()
             updateKeys()
             return
         }
+        if (voiceStatus.isVisible) return
+        layoutSuggestions()
+    }
+
+    private fun layoutSuggestions() {
+        clear()
         startIndexOfMoreSuggestions = layoutHelper.layoutAndReturnStartIndexOfMoreSuggestions(
             context, suggestedWords, suggestionsStrip, this
         )
@@ -320,6 +332,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     override fun onDetachedFromWindow() {
+        voiceStatusAnimator?.cancel()
+        voiceStatusAnimator = null
         super.onDetachedFromWindow()
         dismissMoreSuggestionsPanel()
     }
@@ -546,41 +560,87 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 )
             }
         }
-        if (state == 0) setSuggestions(suggestedWords, lastSuggestionsRtl)
-        else showVoiceStatus()
+        if (state == 0) collapseVoiceStatus()
+        else {
+            clear()
+            showVoiceStatus()
+        }
     }
 
     private fun showVoiceStatus() {
-        clear()
         val recording = voiceDictationState == 1
-        val colors = Settings.getValues().mColors
-        val status = TextView(context).apply {
-            text = context.getString(
-                if (recording) R.string.voice_recording_status else R.string.voice_uploading_status,
-            )
+        voiceStatus.apply {
+            text = context.getString(if (recording) R.string.voice_recording_status else R.string.voice_uploading_status)
             contentDescription = text
-            gravity = Gravity.CENTER
-            isSingleLine = true
-            ellipsize = TextUtils.TruncateAt.END
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-            setTextColor(if (recording) Color.WHITE else colors.get(ColorType.KEY_TEXT))
-            setPadding(10.dpToPx(resources), 0, 10.dpToPx(resources), 0)
-            background = GradientDrawable().apply {
-                cornerRadius = 12.dpToPx(resources).toFloat()
-                setColor(
-                    if (recording) VOICE_RECORDING_COLOR
-                    else colors.get(ColorType.TOOL_BAR_KEY_ENABLED_BACKGROUND) or -0x1000000,
-                )
-            }
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT,
-            ).apply {
-                setMargins(4.dpToPx(resources), 4.dpToPx(resources), 4.dpToPx(resources), 4.dpToPx(resources))
+            background = voiceStatusBackground(if (recording) VOICE_RECORDING_COLOR else VOICE_BUSY_COLOR)
+            elevation = 2.dpToPx(resources).toFloat()
+            isVisible = true
+        }
+        post {
+            if (voiceDictationState != 0) {
+                animateVoiceStatusWidth(measureVoiceStatusWidth())
             }
         }
-        suggestionsStrip.addView(status)
-        suggestionsStrip.isVisible = true
+    }
+
+    private fun collapseVoiceStatus() {
+        if (!voiceStatus.isVisible) {
+            layoutSuggestions()
+            return
+        }
+        animateVoiceStatusWidth(0) {
+            voiceStatus.isGone = true
+            layoutSuggestions()
+        }
+    }
+
+    private fun measureVoiceStatusWidth(): Int {
+        val desiredWidth = ceil(voiceStatus.paint.measureText(voiceStatus.text.toString())).toInt() +
+                voiceStatus.paddingStart + voiceStatus.paddingEnd
+        val reservedWidth = pinnedKeys.width +
+                (if (toolbarExpandKey.isVisible) toolbarExpandKey.width else 0) +
+                12.dpToPx(resources)
+        val availableWidth = (width - reservedWidth).coerceAtLeast(VOICE_STATUS_MIN_WIDTH_DP.dpToPx(resources))
+        return desiredWidth.coerceIn(
+            VOICE_STATUS_MIN_WIDTH_DP.dpToPx(resources),
+            min(VOICE_STATUS_MAX_WIDTH_DP.dpToPx(resources), availableWidth),
+        )
+    }
+
+    private fun animateVoiceStatusWidth(targetWidth: Int, onEnd: (() -> Unit)? = null) {
+        voiceStatusAnimator?.cancel()
+        val startWidth = voiceStatus.layoutParams.width.coerceAtLeast(0)
+        if (startWidth == targetWidth) {
+            onEnd?.invoke()
+            return
+        }
+        voiceStatusAnimator = ValueAnimator.ofInt(startWidth, targetWidth).apply {
+            duration = VOICE_STATUS_ANIMATION_MS
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { animator ->
+                voiceStatus.layoutParams = voiceStatus.layoutParams.apply {
+                    width = animator.animatedValue as Int
+                }
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    if (!cancelled) onEnd?.invoke()
+                    if (voiceStatusAnimator === animation) voiceStatusAnimator = null
+                }
+            })
+            start()
+        }
+    }
+
+    private fun voiceStatusBackground(color: Int) = GradientDrawable().apply {
+        cornerRadius = 18.dpToPx(resources).toFloat()
+        setColor(color)
     }
 
     private fun updateKeys() {
@@ -630,14 +690,15 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     }
 
     private fun styleVoiceButton(button: ImageButton, recording: Boolean, busy: Boolean) {
-        val horizontalInset = 8.dpToPx(resources)
-        val verticalInset = 2.dpToPx(resources)
+        val horizontalInset = 7.dpToPx(resources)
+        val verticalInset = 1.dpToPx(resources)
         val circle = GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(if (recording) VOICE_RECORDING_COLOR else VOICE_IDLE_COLOR)
         }
         button.apply {
-            alpha = if (busy) 0.62f else 1f
+            alpha = if (busy) 0.72f else 1f
+            elevation = 4.dpToPx(resources).toFloat()
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             setPadding(
                 10.dpToPx(resources), 6.dpToPx(resources),
@@ -654,6 +715,10 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         private const val DEBUG_INFO_TEXT_SIZE_IN_DIP = 6.5f
         private val VOICE_IDLE_COLOR = Color.rgb(25, 118, 210)
         private val VOICE_RECORDING_COLOR = Color.rgb(211, 47, 47)
+        private val VOICE_BUSY_COLOR = Color.rgb(69, 90, 100)
+        private const val VOICE_STATUS_MIN_WIDTH_DP = 108
+        private const val VOICE_STATUS_MAX_WIDTH_DP = 306
+        private const val VOICE_STATUS_ANIMATION_MS = 240L
         private val TAG = SuggestionStripView::class.java.simpleName
     }
 }
