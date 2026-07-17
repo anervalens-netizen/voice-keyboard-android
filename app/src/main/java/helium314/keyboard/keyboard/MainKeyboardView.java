@@ -8,6 +8,7 @@ package helium314.keyboard.keyboard;
 
 import android.animation.AnimatorInflater;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -18,6 +19,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.PorterDuff;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
@@ -76,6 +78,10 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     /** Listener for {@link KeyboardActionListener}. */
     private KeyboardActionListener mKeyboardActionListener;
     private int mVoiceDictationState;
+    private int mVoiceDisplayState;
+    private float mVoiceStatusProgress;
+    private ValueAnimator mVoiceStatusAnimator;
+    private final Paint mVoiceStatusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     /* Space key and its icon and background. */
     private Key mSpaceKey;
@@ -749,9 +755,62 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         drawIcon(canvas, icon, x, y, size, size);
     }
 
+    @Override
+    protected void onDraw(@NonNull final Canvas canvas) {
+        super.onDraw(canvas);
+        drawVoiceStatus(canvas);
+    }
+
+    private void drawVoiceStatus(@NonNull final Canvas canvas) {
+        if (mVoiceStatusProgress <= 0.0f || mVoiceDisplayState == 0) return;
+        final Keyboard keyboard = getKeyboard();
+        if (keyboard == null || !keyboard.mId.getHasShortcutKey()) return;
+        Key enterKey = keyboard.getKey(Constants.CODE_ENTER);
+        if (enterKey == null) enterKey = keyboard.getKey(KeyCode.SHIFT_ENTER);
+        if (enterKey == null) return;
+
+        final float height = enterKey.getHeight() * 0.68f;
+        final float right = enterKey.getDrawX() + enterKey.getDrawWidth() - height * 0.12f;
+        final float targetWidth = Math.min(getWidth() - height * 0.35f, enterKey.getHeight() * 5.7f);
+        final float left = right - targetWidth * mVoiceStatusProgress;
+        final float centerY = enterKey.getY() + enterKey.getHeight() * 0.5f;
+        final RectF pill = new RectF(left, centerY - height / 2.0f, right, centerY + height / 2.0f);
+
+        mVoiceStatusPaint.setColor(mVoiceDisplayState == 1
+                ? Color.rgb(211, 47, 47) : Color.rgb(69, 90, 100));
+        canvas.drawRoundRect(pill, height / 2.0f, height / 2.0f, mVoiceStatusPaint);
+
+        final String text = getContext().getString(mVoiceDisplayState == 1
+                ? R.string.voice_recording_status : R.string.voice_uploading_status);
+        mVoiceStatusPaint.setColor(Color.WHITE);
+        mVoiceStatusPaint.setTextAlign(Align.CENTER);
+        mVoiceStatusPaint.setTypeface(Typeface.DEFAULT_BOLD);
+        mVoiceStatusPaint.setTextSize(enterKey.getHeight() * 0.20f);
+        final float maxTextWidth = pill.width() - height * 0.65f;
+        final float measuredWidth = mVoiceStatusPaint.measureText(text);
+        if (measuredWidth > maxTextWidth && maxTextWidth > 0) {
+            mVoiceStatusPaint.setTextSize(mVoiceStatusPaint.getTextSize() * maxTextWidth / measuredWidth);
+        }
+        final float textY = centerY - (mVoiceStatusPaint.ascent() + mVoiceStatusPaint.descent()) / 2.0f;
+        canvas.save();
+        canvas.clipRect(pill);
+        canvas.drawText(text, pill.centerX(), textY, mVoiceStatusPaint);
+        canvas.restore();
+    }
+
     public void setVoiceDictationState(final int state) {
         if (mVoiceDictationState == state) return;
         mVoiceDictationState = state;
+        if (mVoiceStatusAnimator != null) mVoiceStatusAnimator.cancel();
+        if (state != 0) mVoiceDisplayState = state;
+        final float target = state == 0 ? 0.0f : 1.0f;
+        mVoiceStatusAnimator = ValueAnimator.ofFloat(mVoiceStatusProgress, target);
+        mVoiceStatusAnimator.setDuration(220L);
+        mVoiceStatusAnimator.addUpdateListener(animation -> {
+            mVoiceStatusProgress = (float) animation.getAnimatedValue();
+            invalidate();
+        });
+        mVoiceStatusAnimator.start();
         invalidateAllKeys();
     }
 

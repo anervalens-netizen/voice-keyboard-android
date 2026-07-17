@@ -33,6 +33,15 @@ class VoiceDictationController(private val service: LatinIME) {
         }
     }
 
+    fun consumeEnterTap(): Boolean = when (state) {
+        RECORDING -> {
+            stopAndUpload()
+            true
+        }
+        UPLOADING -> true
+        else -> false
+    }
+
     fun cancel() {
         generation += 1
         if (state == RECORDING) stopRecorderSafely(save = false)

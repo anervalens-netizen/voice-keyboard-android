@@ -15,12 +15,12 @@ Gaming exposes its authorized ADB server through Tailscale:
 
 ```bash
 adb -H 100.74.73.114 -P 5037 devices -l
-adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.4-debugNoMinify.apk
+adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.5-debugNoMinify.apk
 ```
 
 After installation, open setup, grant microphone permission, enter a fresh one-time pairing code, enable the IME, and select it. Validate typing and dictation in a normal text field and confirm that voice input is unavailable in password fields.
 
-The suggestion strip must consume no height. A short Enter/action-key press must keep its normal behavior. Holding it for one second must start or stop dictation without inserting Enter; the microphone badge must turn red while recording and slate while transcribing.
+The suggestion strip must consume no height. In idle state, a short Enter/action-key press must keep its normal behavior. Holding it for one second must start dictation with haptic feedback and expand the temporary status pill. While recording, one short Enter tap must stop dictation without inserting Enter; the pill must then show transcription progress and retract after completion.
 
 In portrait, verify that no bar or empty band remains above the keys. The Enter/action key must retain its normal icon with a small microphone badge, and the badge must be absent in password fields.
 

@@ -102,6 +102,9 @@ class KeyboardActionListenerImpl(private val latinIME: LatinIME, private val inp
     }
 
     override fun onCodeInput(primaryCode: Int, x: Int, y: Int, isKeyRepeat: Boolean) {
+        if ((primaryCode == Constants.CODE_ENTER || primaryCode == KeyCode.SHIFT_ENTER) &&
+            latinIME.consumeEnterForVoiceDictation()
+        ) return
         when (primaryCode) {
             KeyCode.TOGGLE_AUTOCORRECT -> return settings.toggleAutoCorrect()
             KeyCode.TOGGLE_INCOGNITO_MODE -> {
