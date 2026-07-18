@@ -5,7 +5,7 @@ The application keeps HeliBoard's keyboard engine and replaces its external voic
 ## Dictation flow
 
 1. The microphone key starts a local AAC/M4A recording after runtime permission is granted.
-2. Holding the Enter/action key for one second starts recording without emitting Enter and produces long-press haptic feedback. A temporary status pill expands left over the keyboard without reserving layout space. While recording, one short Enter tap stops recording and is consumed; the pill then shows transcription progress. The app does not stream partial audio or text.
+2. Holding the Enter/action key for the Android system long-press interval starts recording without emitting Enter and produces long-press haptic feedback. A temporary status pill expands left over the keyboard without reserving layout space. While recording, one short Enter tap stops recording and is consumed; the pill then shows transcription progress. The app does not stream partial audio or text.
 3. A P-256 key held by Android Keystore signs the request timestamp, nonce, request ID, language, and SHA-256 digest of the exact audio bytes.
 4. The client tries the public HTTPS endpoint first and the Tailscale endpoint only after a transport failure.
 5. The returned final text is committed once through the active `InputConnection`.

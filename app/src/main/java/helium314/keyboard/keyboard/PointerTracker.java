@@ -12,6 +12,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.SystemClock;
 import android.view.MotionEvent;
+import android.view.ViewConfiguration;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,7 +46,6 @@ import java.util.WeakHashMap;
 
 public final class PointerTracker implements PointerTrackerQueue.Element,
         BatchInputArbiterListener {
-    private static final int VOICE_LONG_PRESS_TIMEOUT_MILLIS = 1_000;
     private static final String TAG = PointerTracker.class.getSimpleName();
     private static final boolean DEBUG_EVENT = false;
     private static final boolean DEBUG_MOVE_EVENT = false;
@@ -1281,7 +1281,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         final int longpressTimeout = Settings.getValues().mKeyLongpressTimeout;
         if ((code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER)
                 && Settings.getValues().mShowsVoiceInputKey) {
-            return VOICE_LONG_PRESS_TIMEOUT_MILLIS;
+            return ViewConfiguration.getLongPressTimeout();
         } else if (code == KeyCode.SHIFT || code == KeyCode.SYMBOL_ALPHA) {
             // We use slightly longer timeout for shift-lock and the numpad long-press.
             return longpressTimeout * 3 / 2;

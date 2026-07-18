@@ -15,7 +15,7 @@ Gaming exposes its authorized ADB server through Tailscale:
 
 ```bash
 adb -H 100.74.73.114 -P 5037 devices -l
-adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.5-debugNoMinify.apk
+adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.6-debugNoMinify.apk
 ```
 
 After installation, open setup, grant microphone permission, enter a fresh one-time pairing code, enable the IME, and select it. Validate typing and dictation in a normal text field and confirm that voice input is unavailable in password fields.
