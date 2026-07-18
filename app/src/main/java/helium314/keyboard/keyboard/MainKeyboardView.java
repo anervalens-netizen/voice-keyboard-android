@@ -78,10 +78,12 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     /** Listener for {@link KeyboardActionListener}. */
     private KeyboardActionListener mKeyboardActionListener;
     private int mVoiceDictationState;
-    private int mVoiceDisplayState;
-    private float mVoiceStatusProgress;
-    private ValueAnimator mVoiceStatusAnimator;
-    private final Paint mVoiceStatusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private float mVoiceVisualProgress;
+    private float mVoicePulsePhase;
+    private ValueAnimator mVoiceTransitionAnimator;
+    private ValueAnimator mVoicePulseAnimator;
+    private final Paint mVoiceFocusPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private boolean mVoiceTouchRedirected;
 
     /* Space key and its icon and background. */
     private Key mSpaceKey;
@@ -594,16 +596,43 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         if (getKeyboard() == null) {
             return false;
         }
+        final MotionEvent voiceEvent = redirectVoiceTouchIfNeeded(event);
         if (mNonDistinctMultitouchHelper != null) {
-            if (event.getPointerCount() > 1 && mTimerHandler.isInKeyRepeat()) {
+            if (voiceEvent.getPointerCount() > 1 && mTimerHandler.isInKeyRepeat()) {
                 // Key repeating timer will be canceled if 2 or popup keys are in action.
                 mTimerHandler.cancelKeyRepeatTimers();
             }
             // Non distinct multitouch screen support
-            mNonDistinctMultitouchHelper.processMotionEvent(event, mKeyDetector);
+            mNonDistinctMultitouchHelper.processMotionEvent(voiceEvent, mKeyDetector);
+            finishVoiceTouch(event, voiceEvent);
             return true;
         }
-        return processMotionEvent(event);
+        final boolean handled = processMotionEvent(voiceEvent);
+        finishVoiceTouch(event, voiceEvent);
+        return handled;
+    }
+
+    @NonNull
+    private MotionEvent redirectVoiceTouchIfNeeded(@NonNull final MotionEvent event) {
+        if (mVoiceDictationState == 0 || event.getPointerCount() != 1) return event;
+        final RectF target = getVoiceEnterBounds();
+        if (target == null) return event;
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            mVoiceTouchRedirected = target.contains(event.getX(), event.getY());
+        }
+        if (!mVoiceTouchRedirected) return event;
+        final MotionEvent redirected = MotionEvent.obtain(event);
+        redirected.setLocation(target.centerX(), target.centerY());
+        return redirected;
+    }
+
+    private void finishVoiceTouch(@NonNull final MotionEvent original,
+            @NonNull final MotionEvent processed) {
+        if (processed != original) processed.recycle();
+        final int action = original.getActionMasked();
+        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            mVoiceTouchRedirected = false;
+        }
     }
 
     public boolean processMotionEvent(final MotionEvent event) {
@@ -631,6 +660,11 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
 
     public void closing() {
         cancelAllOngoingEvents();
+        if (mVoiceTransitionAnimator != null) mVoiceTransitionAnimator.cancel();
+        if (mVoicePulseAnimator != null) mVoicePulseAnimator.cancel();
+        mVoiceTransitionAnimator = null;
+        mVoicePulseAnimator = null;
+        mVoiceTouchRedirected = false;
         mPopupKeysKeyboardCache.clear();
     }
 
@@ -746,10 +780,6 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         final int padding = Math.max(4, (int) (key.getHeight() * 0.07f));
         final int x = key.getDrawWidth() - size - padding;
         final int y = padding;
-        if (mVoiceDictationState != 0) {
-            paint.setColor(mVoiceDictationState == 1 ? Color.rgb(211, 47, 47) : Color.rgb(69, 90, 100));
-            canvas.drawCircle(x + size / 2.0f, y + size / 2.0f, size * 0.72f, paint);
-        }
         final Drawable icon = source.getConstantState().newDrawable().mutate();
         icon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
         drawIcon(canvas, icon, x, y, size, size);
@@ -758,59 +788,136 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     @Override
     protected void onDraw(@NonNull final Canvas canvas) {
         super.onDraw(canvas);
-        drawVoiceStatus(canvas);
+        drawVoiceFocus(canvas);
     }
 
-    private void drawVoiceStatus(@NonNull final Canvas canvas) {
-        if (mVoiceStatusProgress <= 0.0f || mVoiceDisplayState == 0) return;
+    private void drawVoiceFocus(@NonNull final Canvas canvas) {
+        if (mVoiceVisualProgress <= 0.0f || mVoiceDictationState == 0) return;
         final Keyboard keyboard = getKeyboard();
         if (keyboard == null || !keyboard.mId.getHasShortcutKey()) return;
-        Key enterKey = keyboard.getKey(Constants.CODE_ENTER);
-        if (enterKey == null) enterKey = keyboard.getKey(KeyCode.SHIFT_ENTER);
+        final Key enterKey = getVoiceEnterKey(keyboard);
         if (enterKey == null) return;
 
-        final float height = enterKey.getHeight() * 0.68f;
-        final float right = enterKey.getDrawX() + enterKey.getDrawWidth() - height * 0.12f;
-        final float targetWidth = Math.min(getWidth() - height * 0.35f, enterKey.getHeight() * 5.7f);
-        final float left = right - targetWidth * mVoiceStatusProgress;
-        final float centerY = enterKey.getY() + enterKey.getHeight() * 0.5f;
-        final RectF pill = new RectF(left, centerY - height / 2.0f, right, centerY + height / 2.0f);
+        // Keep the keyboard readable while making Enter the clear focal point.
+        mVoiceFocusPaint.setStyle(Paint.Style.FILL);
+        mVoiceFocusPaint.setColor(Color.argb((int) (31 * mVoiceVisualProgress), 0, 0, 0));
+        canvas.drawRect(0, 0, getWidth(), getHeight(), mVoiceFocusPaint);
 
-        mVoiceStatusPaint.setColor(mVoiceDisplayState == 1
-                ? Color.rgb(211, 47, 47) : Color.rgb(69, 90, 100));
-        canvas.drawRoundRect(pill, height / 2.0f, height / 2.0f, mVoiceStatusPaint);
+        final RectF baseBounds = getVoiceEnterBounds();
+        if (baseBounds == null) return;
+        final float wave = (float) Math.sin(mVoicePulsePhase * Math.PI * 2.0);
+        final float pulseScale = 1.0f + (mVoiceDictationState == 1 ? 0.025f : 0.012f) * wave;
+        final RectF button = scaleRect(baseBounds, pulseScale);
+        final float radius = button.height() * 0.28f;
 
-        final String text = getContext().getString(mVoiceDisplayState == 1
-                ? R.string.voice_recording_status : R.string.voice_uploading_status);
-        mVoiceStatusPaint.setColor(Color.WHITE);
-        mVoiceStatusPaint.setTextAlign(Align.CENTER);
-        mVoiceStatusPaint.setTypeface(Typeface.DEFAULT_BOLD);
-        mVoiceStatusPaint.setTextSize(enterKey.getHeight() * 0.20f);
-        final float maxTextWidth = pill.width() - height * 0.65f;
-        final float measuredWidth = mVoiceStatusPaint.measureText(text);
-        if (measuredWidth > maxTextWidth && maxTextWidth > 0) {
-            mVoiceStatusPaint.setTextSize(mVoiceStatusPaint.getTextSize() * maxTextWidth / measuredWidth);
+        // Soft layered shadow works consistently on both hardware and software canvases.
+        for (int i = 3; i >= 1; i--) {
+            final float spread = KtxKt.dpToPx(i * 2, getResources());
+            final RectF shadow = new RectF(button);
+            shadow.inset(-spread * 0.35f, -spread * 0.22f);
+            shadow.offset(0, spread * 0.65f);
+            mVoiceFocusPaint.setColor(Color.argb(16 + i * 8, 0, 0, 0));
+            canvas.drawRoundRect(shadow, radius + spread, radius + spread, mVoiceFocusPaint);
         }
-        final float textY = centerY - (mVoiceStatusPaint.ascent() + mVoiceStatusPaint.descent()) / 2.0f;
-        canvas.save();
-        canvas.clipRect(pill);
-        canvas.drawText(text, pill.centerX(), textY, mVoiceStatusPaint);
-        canvas.restore();
+
+        // Two restrained blue waves suggest an active microphone without flashing.
+        mVoiceFocusPaint.setStyle(Paint.Style.STROKE);
+        mVoiceFocusPaint.setStrokeWidth(Math.max(2, KtxKt.dpToPx(2, getResources())));
+        for (int i = 0; i < 2; i++) {
+            final float phase = (mVoicePulsePhase + i * 0.5f) % 1.0f;
+            final float spread = KtxKt.dpToPx(5, getResources()) + phase * KtxKt.dpToPx(11, getResources());
+            final RectF ripple = new RectF(button);
+            ripple.inset(-spread, -spread);
+            final int alpha = (int) ((1.0f - phase) * 72 * mVoiceVisualProgress);
+            mVoiceFocusPaint.setColor(Color.argb(alpha, 55, 145, 255));
+            canvas.drawRoundRect(ripple, radius + spread, radius + spread, mVoiceFocusPaint);
+        }
+
+        mVoiceFocusPaint.setStyle(Paint.Style.FILL);
+        final int blue = mVoiceDictationState == 1
+                ? Color.rgb(37, 123, 238) : Color.rgb(55, 105, 175);
+        mVoiceFocusPaint.setColor(blue);
+        canvas.drawRoundRect(button, radius, radius, mVoiceFocusPaint);
+
+        drawFloatingEnterIcons(canvas, keyboard, enterKey, button);
+    }
+
+    @Nullable
+    private Key getVoiceEnterKey(@NonNull final Keyboard keyboard) {
+        Key enterKey = keyboard.getKey(Constants.CODE_ENTER);
+        if (enterKey == null) enterKey = keyboard.getKey(KeyCode.SHIFT_ENTER);
+        return enterKey;
+    }
+
+    @Nullable
+    private RectF getVoiceEnterBounds() {
+        final Keyboard keyboard = getKeyboard();
+        if (keyboard == null) return null;
+        final Key enterKey = getVoiceEnterKey(keyboard);
+        if (enterKey == null) return null;
+        final float targetWidth = enterKey.getDrawWidth() * 1.25f;
+        final float targetHeight = enterKey.getHeight() * 1.25f;
+        final float margin = KtxKt.dpToPx(3, getResources());
+        final float right = Math.min(getWidth() - margin,
+                enterKey.getDrawX() + enterKey.getDrawWidth());
+        final float bottom = Math.min(getHeight() - margin,
+                enterKey.getY() + enterKey.getHeight());
+        return new RectF(right - targetWidth, bottom - targetHeight, right, bottom);
+    }
+
+    @NonNull
+    private static RectF scaleRect(@NonNull final RectF source, final float scale) {
+        final float dx = source.width() * (scale - 1.0f) * 0.5f;
+        final float dy = source.height() * (scale - 1.0f) * 0.5f;
+        return new RectF(source.left - dx, source.top - dy, source.right + dx, source.bottom + dy);
+    }
+
+    private void drawFloatingEnterIcons(@NonNull final Canvas canvas,
+            @NonNull final Keyboard keyboard, @NonNull final Key enterKey,
+            @NonNull final RectF button) {
+        final Drawable actionSource = enterKey.getIcon(keyboard.mIconsSet,
+                Constants.Color.ALPHA_OPAQUE);
+        if (actionSource != null && actionSource.getConstantState() != null) {
+            final Drawable action = actionSource.getConstantState().newDrawable().mutate();
+            action.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+            final int size = (int) (button.height() * 0.42f);
+            final int x = (int) (button.centerX() - size * 0.60f);
+            final int y = (int) (button.centerY() - size * 0.5f);
+            drawIcon(canvas, action, x, y, size, size);
+        }
+        final Drawable micSource = keyboard.mIconsSet.getIconDrawable(ToolbarKey.VOICE.name());
+        if (micSource == null || micSource.getConstantState() == null) return;
+        final Drawable mic = micSource.getConstantState().newDrawable().mutate();
+        mic.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
+        final int micSize = Math.max(14, (int) (button.height() * 0.25f));
+        final int micX = (int) (button.right - micSize * 1.35f);
+        final int micY = (int) (button.bottom - micSize * 1.30f);
+        drawIcon(canvas, mic, micX, micY, micSize, micSize);
     }
 
     public void setVoiceDictationState(final int state) {
         if (mVoiceDictationState == state) return;
         mVoiceDictationState = state;
-        if (mVoiceStatusAnimator != null) mVoiceStatusAnimator.cancel();
-        if (state != 0) mVoiceDisplayState = state;
+        if (mVoiceTransitionAnimator != null) mVoiceTransitionAnimator.cancel();
         final float target = state == 0 ? 0.0f : 1.0f;
-        mVoiceStatusAnimator = ValueAnimator.ofFloat(mVoiceStatusProgress, target);
-        mVoiceStatusAnimator.setDuration(220L);
-        mVoiceStatusAnimator.addUpdateListener(animation -> {
-            mVoiceStatusProgress = (float) animation.getAnimatedValue();
+        mVoiceTransitionAnimator = ValueAnimator.ofFloat(mVoiceVisualProgress, target);
+        mVoiceTransitionAnimator.setDuration(220L);
+        mVoiceTransitionAnimator.addUpdateListener(animation -> {
+            mVoiceVisualProgress = (float) animation.getAnimatedValue();
             invalidate();
         });
-        mVoiceStatusAnimator.start();
+        mVoiceTransitionAnimator.start();
+        if (mVoicePulseAnimator != null) mVoicePulseAnimator.cancel();
+        if (state != 0) {
+            mVoicePulseAnimator = ValueAnimator.ofFloat(0.0f, 1.0f);
+            mVoicePulseAnimator.setDuration(state == 1 ? 1300L : 1900L);
+            mVoicePulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            mVoicePulseAnimator.addUpdateListener(animation -> {
+                mVoicePulsePhase = (float) animation.getAnimatedValue();
+                invalidate();
+            });
+            mVoicePulseAnimator.start();
+        }
         invalidateAllKeys();
     }
 

@@ -1161,6 +1161,14 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
             sListener.onReleaseKey(KeyCode.VOICE_INPUT, false);
             return;
         }
+        if (code == Constants.CODE_COMMA) {
+            cancelKeyTracking();
+            sListener.onPressKey(KeyCode.SETTINGS, 0, true, HapticEvent.NO_HAPTICS);
+            sListener.onCodeInput(KeyCode.SETTINGS, Constants.NOT_A_COORDINATE,
+                    Constants.NOT_A_COORDINATE, false);
+            sListener.onReleaseKey(KeyCode.SETTINGS, false);
+            return;
+        }
         if (key.hasNoPanelAutoPopupKey()) {
             cancelKeyTracking();
             final int popupKeyCode = key.getPopupKeys()[0].mCode;

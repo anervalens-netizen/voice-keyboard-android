@@ -1314,9 +1314,9 @@ New dictionary:
     <string name="voice_open_keyboard_settings">Enable keyboard in Android</string>
     <string name="voice_choose_keyboard">Choose active keyboard</string>
     <string name="voice_privacy_note">Audio is sent only after you tap stop. The OpenAI key stays on your server.</string>
-    <string name="voice_recording">Listening… Tap the microphone again to send.</string>
+    <string name="voice_recording">Listening… Tap Enter to send.</string>
     <string name="voice_uploading">Transcribing with OpenAI…</string>
-    <string name="voice_recording_status">STT started — tap Enter to Stop</string>
+    <string name="voice_recording_status">Recording… Tap Enter to stop</string>
     <string name="voice_uploading_status">Transcribing…</string>
     <string name="voice_not_paired">Pair the phone before using dictation.</string>
     <string name="voice_permission_needed">Microphone permission is required.</string>

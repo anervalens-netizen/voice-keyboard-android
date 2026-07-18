@@ -441,9 +441,9 @@
     <string name="voice_open_keyboard_settings">Activează tastatura în Android</string>
     <string name="voice_choose_keyboard">Alege tastatura activă</string>
     <string name="voice_privacy_note">Audio este trimis numai după ce apeși stop. Cheia OpenAI rămâne pe serverul tău.</string>
-    <string name="voice_recording">Ascult… Apasă din nou microfonul pentru trimitere.</string>
+    <string name="voice_recording">Ascult… Atinge Enter pentru trimitere.</string>
     <string name="voice_uploading">Transcriu cu OpenAI…</string>
-    <string name="voice_recording_status">STT pornit — apasă Enter pentru Stop</string>
+    <string name="voice_recording_status">Se înregistrează… Atinge Enter pentru oprire</string>
     <string name="voice_uploading_status">Se transcrie…</string>
     <string name="voice_not_paired">Împerechează telefonul înainte de a folosi dictarea.</string>
     <string name="voice_permission_needed">Este necesar accesul la microfon.</string>
