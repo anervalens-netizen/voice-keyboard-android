@@ -17,8 +17,8 @@ android {
         targetSdk = 36
         // Keep the upstream HeliBoard version-code range so its historical
         // preference migrations are not replayed on every private release.
-        versionCode = 4007
-        versionName = "0.1.7"
+        versionCode = 4008
+        versionName = "0.1.8"
         ndk {
             abiFilters.clear()
             // This private build targets the physical OnePlus Nord 4.

@@ -746,8 +746,20 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     }
 
     @Override
+    protected void onDrawKeyBackground(@NonNull final Key key, @NonNull final Canvas canvas,
+            @NonNull final Drawable background) {
+        if (mVoiceDictationState != 0 && isVoiceEnterKey(key)) {
+            return;
+        }
+        super.onDrawKeyBackground(key, canvas, background);
+    }
+
+    @Override
     protected void onDrawKeyTopVisuals(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Paint paint, @NonNull final KeyDrawParams params) {
+        if (mVoiceDictationState != 0 && isVoiceEnterKey(key)) {
+            return;
+        }
         if (key.altCodeWhileTyping() && key.isEnabled()) {
             params.mAnimAlpha = Constants.Color.ALPHA_OPAQUE;
         }
@@ -757,6 +769,9 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         if ((code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER)
                 && keyboard != null && keyboard.mId.getHasShortcutKey()) {
             drawVoiceBadge(key, keyboard, canvas, paint);
+        }
+        if (code == Constants.CODE_COMMA && keyboard != null) {
+            drawSettingsBadge(key, keyboard, canvas, params);
         }
         if (code == Constants.CODE_SPACE) {
             // If input language are explicitly selected.
@@ -770,6 +785,25 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         } else if (code == KeyCode.LANGUAGE_SWITCH) {
             drawKeyPopupHint(key, canvas, paint, params);
         }
+    }
+
+    private static boolean isVoiceEnterKey(@NonNull final Key key) {
+        final int code = key.getCode();
+        return code == Constants.CODE_ENTER || code == KeyCode.SHIFT_ENTER;
+    }
+
+    private void drawSettingsBadge(@NonNull final Key key, @NonNull final Keyboard keyboard,
+            @NonNull final Canvas canvas, @NonNull final KeyDrawParams params) {
+        final Drawable source = keyboard.mIconsSet.getIconDrawable(ToolbarKey.SETTINGS.name());
+        if (source == null || source.getConstantState() == null) return;
+        final int size = Math.max(11, (int) (key.getHeight() * 0.19f));
+        final int padding = Math.max(4, (int) (key.getHeight() * 0.07f));
+        final int x = key.getDrawWidth() - size - padding;
+        final int y = padding;
+        final Drawable icon = source.getConstantState().newDrawable().mutate();
+        icon.setColorFilter(key.selectHintTextColor(params), PorterDuff.Mode.SRC_IN);
+        icon.setAlpha(190);
+        drawIcon(canvas, icon, x, y, size, size);
     }
 
     private void drawVoiceBadge(@NonNull final Key key, @NonNull final Keyboard keyboard,
@@ -857,10 +891,9 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         if (enterKey == null) return null;
         final float targetWidth = enterKey.getDrawWidth() * 1.25f;
         final float targetHeight = enterKey.getHeight() * 1.25f;
-        final float margin = KtxKt.dpToPx(3, getResources());
-        final float right = Math.min(getWidth() - margin,
+        final float right = Math.min(getWidth(),
                 enterKey.getDrawX() + enterKey.getDrawWidth());
-        final float bottom = Math.min(getHeight() - margin,
+        final float bottom = Math.min(getHeight(),
                 enterKey.getY() + enterKey.getHeight());
         return new RectF(right - targetWidth, bottom - targetHeight, right, bottom);
     }
