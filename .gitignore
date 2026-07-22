@@ -3,6 +3,8 @@
 .gradle
 .kotlin
 local.properties
+keystore.properties
+.private/
 .DS_Store
 Gemfile
 build

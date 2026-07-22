@@ -1,6 +1,6 @@
-# AGENTS.md — Voice Keyboard Android
+# AGENTS.md — Astra Keyboard
 
-- This app is a GPLv3 fork of HeliBoard v4.0, pinned initially at upstream commit `bd48798b99cccc99704eebf2a9259c02dbd684d5`.
+- Astra Keyboard is a GPLv3 product fork of HeliBoard v4.0, pinned initially at upstream commit `bd48798b99cccc99704eebf2a9259c02dbd684d5`.
 - Preserve the mature keyboard engine, dictionaries, layouts, autocorrection, and password-field protections. Keep custom code focused on batch voice dictation and product defaults.
 - Never embed an OpenAI credential, server secret, pairing code, recorded audio, or transcription in source, resources, BuildConfig, logs, or crash reports.
 - Device authentication uses a non-exportable Android Keystore P-256 key. The app may store endpoints, device ID, and enrollment status locally.

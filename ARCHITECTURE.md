@@ -1,4 +1,4 @@
-# Voice Keyboard Android architecture
+# Astra Keyboard architecture
 
 The application keeps HeliBoard's keyboard engine and replaces its external voice-IME shortcut with an internal, final-result dictation flow.
 

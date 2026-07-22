@@ -1,5 +1,11 @@
 import com.android.build.api.variant.ApplicationVariant
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val releaseSigningProperties = rootProject.file("keystore.properties")
+    .takeIf(File::isFile)
+    ?.inputStream()
+    ?.use { Properties().apply { load(it) } }
 
 plugins {
     id("com.android.application")
@@ -17,8 +23,8 @@ android {
         targetSdk = 36
         // Keep the upstream HeliBoard version-code range so its historical
         // preference migrations are not replayed on every private release.
-        versionCode = 4009
-        versionName = "0.1.9"
+        versionCode = 4010
+        versionName = "0.2.0"
         ndk {
             abiFilters.clear()
             // This private build targets the physical OnePlus Nord 4.
@@ -27,12 +33,27 @@ android {
         proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
 
+    signingConfigs {
+        if (releaseSigningProperties != null) {
+            create("astraRelease") {
+                storeFile = rootProject.file(requireNotNull(releaseSigningProperties.getProperty("storeFile")))
+                storePassword = requireNotNull(releaseSigningProperties.getProperty("storePassword"))
+                keyAlias = requireNotNull(releaseSigningProperties.getProperty("keyAlias"))
+                keyPassword = requireNotNull(releaseSigningProperties.getProperty("keyPassword"))
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
+            if (releaseSigningProperties != null) signingConfig = signingConfigs.getByName("astraRelease")
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true
@@ -70,7 +91,7 @@ android {
             }
             variant.outputs.forEach { output ->
                 if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                    output.outputFileName = "HeliBoard_${defaultConfig.versionName}-${variant.buildType}.apk"
+                    output.outputFileName = "AstraKeyboard_${defaultConfig.versionName}-${variant.buildType}.apk"
                 }
             }
         }

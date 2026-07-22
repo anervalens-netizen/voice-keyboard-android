@@ -1,10 +1,11 @@
-# Voice Keyboard Android runbook
+# Astra Keyboard runbook
 
 ## Build
 
 ```bash
 ./gradlew testRunTestsUnitTest
 ./gradlew assembleDebugNoMinify
+./gradlew assembleRelease
 ```
 
 The local Android SDK path is stored in ignored `local.properties`. No server credential belongs in the APK.
@@ -15,14 +16,14 @@ The permanently attached OnePlus is the primary development test path:
 
 ```bash
 adb devices -l
-adb -s 885ae67a install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.9-debugNoMinify.apk
+adb -s 885ae67a install -r app/build/outputs/apk/release/AstraKeyboard_0.2.0-release.apk
 ```
 
 Gaming remains the remote fallback through Tailscale:
 
 ```bash
 adb -H 100.74.73.114 -P 5037 devices -l
-adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/debugNoMinify/HeliBoard_0.1.9-debugNoMinify.apk
+adb -H 100.74.73.114 -P 5037 install -r app/build/outputs/apk/release/AstraKeyboard_0.2.0-release.apk
 ```
 
 After installation, open setup, grant microphone permission, enter a fresh one-time pairing code, enable the IME, and select it. Validate typing and dictation in a normal text field and confirm that voice input is unavailable in password fields.
@@ -40,3 +41,9 @@ The release page and source archive provide the GPLv3 corresponding source. Neve
 Every recipient needs a separately generated ten-minute pairing code. Installing the APK alone
 enables normal typing, but not server-backed dictation. For public or untrusted distribution,
 confirm that the STT gateway's per-device quotas and revocation commands are active before sharing.
+
+Release signing reads ignored `keystore.properties` and `.private/`. The
+permanent key and its credential file must exist on the primary build host and
+in the protected NAS signing backup. Never replace the key after publishing the
+first stable `eu.astancu.voicekeyboard` package. Publish candidate and stable
+metadata through Astra Server; never create a mutable `latest.apk` URL.
