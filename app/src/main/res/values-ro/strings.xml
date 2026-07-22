@@ -445,6 +445,8 @@
     <string name="voice_uploading">Transcriu cu OpenAI…</string>
     <string name="voice_recording_status">Se înregistrează… Atinge Enter pentru oprire</string>
     <string name="voice_uploading_status">Se transcrie…</string>
+    <string name="voice_cancel_recording">Anulează înregistrarea</string>
+    <string name="voice_recording_cancelled">Înregistrare anulată.</string>
     <string name="voice_not_paired">Împerechează telefonul înainte de a folosi dictarea.</string>
     <string name="voice_permission_needed">Este necesar accesul la microfon.</string>
     <string name="voice_recording_failed">Nu am putut porni sau salva înregistrarea.</string>

@@ -1318,6 +1318,8 @@ New dictionary:
     <string name="voice_uploading">Transcribing with OpenAI…</string>
     <string name="voice_recording_status">Recording… Tap Enter to stop</string>
     <string name="voice_uploading_status">Transcribing…</string>
+    <string name="voice_cancel_recording">Cancel recording</string>
+    <string name="voice_recording_cancelled">Recording cancelled.</string>
     <string name="voice_not_paired">Pair the phone before using dictation.</string>
     <string name="voice_permission_needed">Microphone permission is required.</string>
     <string name="voice_recording_failed">Could not start or save the recording.</string>

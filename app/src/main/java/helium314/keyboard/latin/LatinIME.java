@@ -1439,6 +1439,11 @@ public class LatinIME extends InputMethodService implements
         return mVoiceDictationController != null && mVoiceDictationController.consumeEnterTap();
     }
 
+    @Override
+    public void cancelVoiceDictation() {
+        if (mVoiceDictationController != null) mVoiceDictationController.cancelByUser();
+    }
+
     public void onTextInput(@Nullable String rawText) {
         if (rawText == null) return;
         // TODO: have the keyboard pass the correct key code when we need it.

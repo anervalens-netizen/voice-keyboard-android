@@ -1,8 +1,13 @@
 # Tastatura Vocală
 
 Private-first Android keyboard derived from HeliBoard, with explicit batch Romanian voice dictation.
-The microphone records only between two user taps, sends the completed audio to the paired STT
-gateway, and inserts only the final transcription. The OpenAI credential remains on the server.
+Holding Enter starts recording; tapping Enter stops and sends the completed audio to the paired STT
+gateway, while the separate cancel control deletes the local recording without upload. Only the
+final transcription is inserted. The OpenAI credential remains on the server.
+
+The compact contextual strip keeps a fixed 30 dp height so suggestions, eligible clipboard or
+inline content, and voice status never move the key rows. Its rounded controls float over the host
+app on a transparent layer; the solid themed keyboard background starts at the key surface.
 
 ## Install and pair
 

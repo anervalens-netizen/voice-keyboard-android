@@ -156,6 +156,10 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
 
     // the popup keys panel currently being shown. equals null if no panel is active.
     private PopupKeysPanel mPopupKeysPanel;
+    // Comma opens a menu of actions. Releasing without sliding must not accidentally activate
+    // whichever action happens to overlap the original touch point.
+    private boolean mCommaPopupRequiresSelection;
+    private boolean mCommaPopupSelectionMoved;
 
     // true if this pointer is in the dragging finger mode.
     boolean mIsInDraggingFinger;
@@ -818,6 +822,13 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         if (isShowingPopupKeysPanel()) {
             final int translatedX = mPopupKeysPanel.translateX(x);
             final int translatedY = mPopupKeysPanel.translateY(y);
+            if (mCommaPopupRequiresSelection && !mCommaPopupSelectionMoved) {
+                final int dx = x - mStartX;
+                final int dy = y - mStartY;
+                final int selectionSlop = KtxKt.dpToPx(10, Resources.getSystem());
+                mCommaPopupSelectionMoved = dx * dx + dy * dy
+                        >= selectionSlop * selectionSlop;
+            }
             mPopupKeysPanel.onMoveEvent(translatedX, translatedY, mPointerId, eventTime);
             onMoveKey(x, y);
             if (mIsInSlidingKeyInput) {
@@ -1078,11 +1089,15 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
                 // To prevent the duplicate input, we set mPopupKeysPanel null before calling onUpEvent, so isShowingPopupKeysPanel returns false
                 PopupKeysPanel panel = mPopupKeysPanel;
                 mPopupKeysPanel = null;
-                int translatedX = panel.translateX(x);
-                int translatedY = panel.translateY(y);
-                panel.onUpEvent(translatedX, translatedY, mPointerId, eventTime);
+                if (!mCommaPopupRequiresSelection || mCommaPopupSelectionMoved) {
+                    int translatedX = panel.translateX(x);
+                    int translatedY = panel.translateY(y);
+                    panel.onUpEvent(translatedX, translatedY, mPointerId, eventTime);
+                }
                 panel.dismissPopupKeysPanel();
             }
+            mCommaPopupRequiresSelection = false;
+            mCommaPopupSelectionMoved = false;
             dismissPopupKeysPanel();
             if (isInSlidingKeyInput)
                 callListenerOnFinishSlidingInput();
@@ -1194,6 +1209,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         final int translatedY = popupKeysPanel.translateY(mLastY);
         popupKeysPanel.onDownEvent(translatedX, translatedY, mPointerId, SystemClock.uptimeMillis());
         mPopupKeysPanel = popupKeysPanel;
+        mCommaPopupRequiresSelection = code == Constants.CODE_COMMA;
+        mCommaPopupSelectionMoved = false;
         if (mKeySwipeAllowed) {
             mKeySwipeAllowed = false;
             sInKeySwipe = false;
@@ -1222,6 +1239,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element,
         sTimerProxy.cancelKeyTimersOf(this);
         setReleasedKeyGraphics(mCurrentKey, true);
         resetKeySelectionByDraggingFinger();
+        mCommaPopupRequiresSelection = false;
+        mCommaPopupSelectionMoved = false;
         dismissPopupKeysPanel();
     }
 

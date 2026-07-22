@@ -8,6 +8,7 @@ package helium314.keyboard.latin;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -107,7 +108,13 @@ public final class InputView extends FrameLayout {
     }
 
     private Unit onNextLayout(View v) {
-        Settings.getValues().mColors.setBackground(findViewById(R.id.main_keyboard_frame), ColorType.MAIN_BACKGROUND);
+        // Keep the contextual strip visually floating above the keyboard. The IME window is
+        // translucent, so only the actual keyboard surface receives the themed background.
+        findViewById(R.id.main_keyboard_frame).setBackgroundColor(Color.TRANSPARENT);
+        Settings.getValues().mColors.setBackground(
+                findViewById(R.id.keyboard_view_wrapper), ColorType.MAIN_BACKGROUND);
+        Settings.getValues().mColors.setBackground(
+                findViewById(R.id.float_handle_container), ColorType.MAIN_BACKGROUND);
 
         // Work around inset application being unreliable
         requestApplyInsets();

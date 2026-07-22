@@ -49,6 +49,12 @@ class VoiceDictationController(private val service: LatinIME) {
         service.setVoiceDictationState(IDLE)
     }
 
+    fun cancelByUser() {
+        if (state != RECORDING) return
+        cancel()
+        toast(R.string.voice_recording_cancelled)
+    }
+
     fun destroy() {
         cancel()
         worker.shutdownNow()
